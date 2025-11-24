@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Generator - HUD System</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- SETTING WARNA TEMA SCI-FI --- */
+        :root {
+            --bg-color: #050505;           /* Latar Hitam Pekat */
+            --primary: #00f3ff;            /* Warna Utama (Cyan Neon) */
+            --secondary: #ffffff;          /* Warna Teks Putih */
+            --alert: #ff003c;              /* Warna Error (Merah) */
+            --success: #00ff00;            /* Warna Sukses (Hijau) */
+            --glow: 0 0 10px rgba(0, 243, 255, 0.5); /* Efek Cahaya */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* --- LATAR BELAKANG GRID --- */
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Membuat garis kotak-kotak tipis */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+        }
+        
+        /* Efek Gelap di Pinggiran Layar (Vignette) */
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 30%, #000 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* --- KOTAK UTAMA (CARD) --- */
+        .generator-card {
+            background-color: rgba(10, 20, 30, 0.85); /* Agak transparan */
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+            max-width: 600px;
+            width: 90%;
+            padding: 3rem 2rem;
+            position: relative;
+            
+            /* Memotong Sudut Kotak (Chamfered Edges) */
+            clip-path: polygon(
+                5% 0, 95% 0, 100% 5%, 100% 95%, 
+                95% 100%, 5% 100%, 0 95%, 0 5%
+            );
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 0;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        h5 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            letter-spacing: 2px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--primary);
+            display: inline-block;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            color: var(--secondary);
+            opacity: 0.7;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        /* --- INPUT FIELDS --- */
+        .form-control {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            border-left: 3px solid var(--primary); /* Garis tebal di kiri */
+            color: var(--primary) !important;
+            border-radius: 0; /* Sudut tajam */
+            font-family: 'Share Tech Mono', monospace;
+            padding: 12px;
+        }
+
+        .form-control:focus {
+            background-color: rgba(0, 243, 255, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+        
+        .form-control::placeholder {
+            color: rgba(0, 243, 255, 0.3);
+        }
+
+        /* --- HASIL KUNCI (TERMINAL STYLE) --- */
+        .key-output {
+            background-color: #000 !important;
+            color: var(--success) !important;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            text-align: center;
+            border: 1px solid var(--secondary);
+        }
+
+        /* --- TOMBOL UTAMA --- */
+        .btn-hud-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            padding: 12px;
+            width: 100%;
+            text-transform: uppercase;
+            transition: 0.3s;
+            border-radius: 0;
+        }
+
+        .btn-hud-primary:hover:not(:disabled) {
+            background: var(--primary);
+            color: #000; /* Teks jadi hitam saat dihover */
+            box-shadow: var(--glow);
+        }
+
+        .btn-hud-primary:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        /* --- TOMBOL COPY --- */
+        .btn-hud-success {
+            background: rgba(0, 255, 0, 0.05);
+            color: var(--success);
+            border: 1px solid var(--success);
+            font-family: 'Orbitron', sans-serif;
+            padding: 10px;
+            width: 100%;
+            transition: 0.3s;
+            border-radius: 0;
+        }
+
+        .btn-hud-success:hover:not(:disabled) {
+            background: var(--success);
+            color: #000;
+            box-shadow: 0 0 15px var(--success);
+        }
+
+        .btn-hud-success:disabled {
+            border-color: #444;
+            color: #444;
+            background: transparent;
+        }
+
+        /* --- LINK ADMIN DI BAWAH --- */
+        .admin-links {
+            margin-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .btn-link-sci {
+            text-decoration: none;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.9rem;
+            padding: 5px 15px;
+            border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        
+        .btn-link-sci:hover {
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        /* --- DEKORASI SUDUT KECIL --- */
+        .corner-deco {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--primary);
+            transition: 0.3s;
+        }
+        .top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
+        .top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+        .bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+        .bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+        /* Animasi Kedip */
+        @keyframes blink { 50% { opacity: 0; } }
+        .blink { animation: blink 1s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="vignette"></div>
+
+    <div class="generator-card">
+        
+        <div class="corner-deco top-left"></div>
+        <div class="corner-deco top-right"></div>
+        <div class="corner-deco bottom-left"></div>
+        <div class="corner-deco bottom-right"></div>
+
+        <div class="text-center mb-4">
+            <small style="color: var(--alert); letter-spacing: 2px;">[ SYSTEM SECURE ]</small>
+            <h2>ACCESS_KEY_GEN</h2>
+            <p style="color: #fff; opacity: 0.5; font-size: 0.8rem;">VERSION 2.0 // STATUS: ONLINE</p>
+        </div>
+
+        <form id="generateForm" class="mb-4 text-start">
+            <h5>>> USER_REGISTRATION</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">FIRST_NAME</label>
+                    <input type="text" id="firstName" class="form-control" placeholder="ENTER NAME..." required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">LAST_NAME</label>
+                    <input type="text" id="lastName" class="form-control" placeholder="ENTER SURNAME..." required>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label">EMAIL_ADDRESS</label>
+                <input type="email" id="email" class="form-control" placeholder="USER@DOMAIN.COM" required>
+            </div>
+
+            <button type="submit" id="generateKeyBtn" class="btn-hud-primary">
+                INITIATE GENERATION
+            </button>
+        </form>
+        
+        <div class="mb-3 mt-4">
+            <label class="form-label small">GENERATED_KEY_OUTPUT</label>
+            <input type="text" class="form-control key-output" id="apiKeyOutput" 
+                   value="WAITING INPUT..." readonly>
+        </div>
+        
+        <button id="copyKeyBtn" class="btn-hud-success" disabled>
+            COPY_TO_CLIPBOARD
+        </button>
+        
+        <p id="messageArea" class="mt-3 text-center small fw-bold"></p>
+        
+        <div class="admin-links">
+            <a href="admin_register.html" class="btn-link-sci">&lt; ADMIN_REG &gt;</a>
+            <a href="admin_login.html" class="btn-link-sci">&lt; ADMIN_LOGIN &gt;</a>
+        </div>
+    </div>
+
+    <script>
+        const API_REGISTER_URL = 'http://localhost:3000/user/register';
+
+        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            
+            const outputField = document.getElementById('apiKeyOutput');
+            const copyBtn = document.getElementById('copyKeyBtn');
+            const messageArea = document.getElementById('messageArea'); 
+            const submitBtn = document.getElementById('generateKeyBtn');
+
+            // Efek Loading
+            outputField.value = "CALCULATING...";
+            outputField.style.color = "yellow"; 
+            copyBtn.disabled = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = "[ PROCESSING... ]";
+            messageArea.textContent = "";
+
+            try {
+                const response = await fetch(API_REGISTER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, email }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // SUKSES
+                    outputField.value = data.apiKey;
+                    outputField.style.color = "var(--success)"; 
+                    copyBtn.disabled = false;
+                    
+                    const date = new Date(data.expires).toLocaleDateString('id-ID', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                    }).toUpperCase();
+
+                    messageArea.textContent = `> ACCESS GRANTED. VALID UNTIL: ${date}`;
+                    messageArea.style.color = 'var(--success)';
+                } else {
+                    // ERROR SERVER
+                    outputField.value = "ACCESS_DENIED";
+                    outputField.style.color = "var(--alert)";
+                    
+                    messageArea.textContent = `> ERROR: ${data.error || data.message || 'REGISTRATION FAILED'}`;
+                    messageArea.style.color = 'var(--alert)';
+                }
+            } catch (error) {
+                // ERROR JARINGAN
+                console.error(error);
+                outputField.value = "CONNECTION_LOST";
+                outputField.style.color = "var(--alert)";
+                messageArea.textContent = "> FATAL ERROR: SERVER UNREACHABLE.";
+                messageArea.style.color = 'var(--alert)';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "INITIATE GENERATION";
+            }
+        });
+
+        // Fitur Copy Paste
+        document.getElementById('copyKeyBtn').addEventListener('click', () => {
+            const outputField = document.getElementById('apiKeyOutput');
+            
+            outputField.select();
+            outputField.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(outputField.value);
+            
+            const messageArea = document.getElementById('messageArea');
+            const originalText = messageArea.textContent;
+            const originalColor = messageArea.style.color;
+            
+            messageArea.textContent = "> DATA COPIED TO BUFFER";
+            messageArea.style.color = 'var(--primary)';
+
+            setTimeout(() => {
+                messageArea.textContent = originalText;
+                messageArea.style.color = originalColor;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
